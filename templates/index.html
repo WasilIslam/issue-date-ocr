@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDF Issue Date Extractor</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/antd/4.16.13/antd.min.css"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&family=Teachers:ital,wght@0,400..800;1,400..800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      .container {
+        width: 50%;
+        margin: 50px auto;
+        text-align: center;
+        font-family: "Teachers", sans-serif;
+        font-optical-sizing: auto;
+        font-style: normal;
+      }
+      .drop-area {
+        border: 2px dashed #1890ff;
+        padding: 50px;
+        margin-top: 20px;
+        border-radius: 10px;
+      }
+      .loading,
+      .result {
+        margin-top: 20px;
+        display: none;
+        font-weight: 500;
+        font-size: x-large;
+      }
+      iframe {
+        width: 100%;
+        height: 600px;
+        margin-top: 20px;
+        border: 1px solid #1890ff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Clearance Certificate Issue Date Extractor</h1>
+      <div class="drop-area" id="drop-area">
+        <p>Drag and drop your PDF file here</p>
+      </div>
+      <input
+        type="file"
+        id="file-input"
+        style="
+          margin-top: 20px;
+          display: block;
+          margin-left: auto;
+          margin-right: auto;
+        "
+      />
+      <div class="loading" id="loading">
+        <p>Loading...</p>
+      </div>
+      <div class="result" id="result">
+        <p>Issue Date: <span id="issue-date"></span></p>
+        <p>Expiration Date: <span id="expiration-date"></span></p>
+      </div>
+      <iframe id="pdf-viewer" style="display: none;"></iframe>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/antd/4.16.13/antd.min.js"></script>
+    <script>
+      const dropArea = document.getElementById("drop-area");
+      const fileInput = document.getElementById("file-input");
+      const loading = document.getElementById("loading");
+      const result = document.getElementById("result");
+      const issueDateSpan = document.getElementById("issue-date");
+      const expirationDateSpan = document.getElementById("expiration-date");
+      const pdfViewer = document.getElementById("pdf-viewer");
+
+      const handleFileUpload = (file) => {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        loading.style.display = "block";
+        result.style.display = "none";
+        pdfViewer.style.display = "none";
+
+        fetch("/upload", {
+          method: "POST",
+          body: formData,
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            loading.style.display = "none";
+            if (data.error) {
+              antd.notification.error({
+                message: "Error",
+                description: data.error,
+              });
+            } else {
+              issueDateSpan.textContent = data.issue_date;
+              expirationDateSpan.textContent = data.expiration_date;
+              result.style.display = "block";
+              pdfViewer.src = URL.createObjectURL(file);
+              pdfViewer.style.display = "block";
+            }
+          })
+          .catch((error) => {
+            loading.style.display = "none";
+            antd.notification.error({
+              message: "Error",
+              description: "Error uploading file",
+            });
+            console.error("Error:", error);
+          });
+      };
+
+      dropArea.addEventListener("dragover", (event) => {
+        event.preventDefault();
+      });
+
+      dropArea.addEventListener("drop", (event) => {
+        event.preventDefault();
+        const files = event.dataTransfer.files;
+        if (files.length > 0) {
+          handleFileUpload(files[0]);
+        }
+      });
+
+      fileInput.addEventListener("change", (event) => {
+        const files = event.target.files;
+        if (files.length > 0) {
+          handleFileUpload(files[0]);
+        }
+      });
+    </script>
+  </body>
+</html>
